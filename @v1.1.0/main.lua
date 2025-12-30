@@ -18,6 +18,11 @@ local function emit(listeners, ...)
 	end
 end
 
+local function getLocalHRP()
+	local char = localPlayer.Character
+	return char and char:FindFirstChild("HumanoidRootPart")
+end
+
 local function newId()
 	nextId += 1
 	return nextId
@@ -75,6 +80,13 @@ local function raycast(origin, targetPos, ignore)
 	params.IgnoreWater = true
 
 	return Workspace:Raycast(origin, targetPos - origin, params)
+end
+
+local function isEnemy(entity)
+	if entity.player == nil then
+		return true -- NPC
+	end
+	return entity.player ~= localPlayer
 end
 
 function EntityLib.fromModel(model)
@@ -294,6 +306,20 @@ Players.PlayerAdded:Connect(function(player)
 	player.CharacterAdded:Connect(function(char)
 		trackCharacter(player, char)
 	end)
+end)
+
+for _, model in ipairs(Workspace:GetChildren()) do
+	if model:IsA("Model") and model:FindFirstChildOfClass("Humanoid") then
+		if not byModel[model] then
+			createEntity(model, nil)
+		end
+	end
+end
+
+Workspace.ChildAdded:Connect(function(model)
+	if model:IsA("Model") and model:FindFirstChildOfClass("Humanoid") then
+		createEntity(model, nil)
+	end
 end)
 
 Players.PlayerRemoving:Connect(function(player)
