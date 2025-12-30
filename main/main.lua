@@ -18,6 +18,11 @@ local function emit(listeners, ...)
 	end
 end
 
+local function getLocalHRP()
+	local char = localPlayer.Character
+	return char and char:FindFirstChild("HumanoidRootPart")
+end
+
 local function newId()
 	nextId += 1
 	return nextId
