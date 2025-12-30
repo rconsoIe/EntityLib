@@ -1,6 +1,9 @@
 local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
 
 local EntityLib = {}
+
+local localPlayer = Players.LocalPlayer
 
 local entities = {}
 local byModel = {}
@@ -81,6 +84,54 @@ end
 
 function EntityLib.getPosition(entity)
 	return entity.hrp and entity.hrp.Position
+end
+
+function EntityLib.getNearby(radius, angle)
+	local char = localPlayer.Character
+	if not char then return {} end
+
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	if not hrp then return {} end
+
+	local origin = hrp.Position
+	local radiusSq = radius * radius
+
+	local useAngle = angle ~= nil
+	local cosLimit
+
+	if useAngle then
+		cosLimit = math.cos(math.rad(angle) * 0.5)
+	end
+
+	local lookVector
+	local cam = Workspace.CurrentCamera
+	if cam then
+		lookVector = cam.CFrame.LookVector
+	else
+		lookVector = hrp.CFrame.LookVector
+	end
+
+	local results = {}
+
+	for _, entity in pairs(entities) do
+		if entity.player ~= localPlayer and entity.hrp then
+			local delta = entity.hrp.Position - origin
+			local distSq = delta:Dot(delta)
+
+			if distSq <= radiusSq then
+				if useAngle then
+					local dir = delta.Unit
+					if dir:Dot(lookVector) >= cosLimit then
+						results[#results + 1] = entity
+					end
+				else
+					results[#results + 1] = entity
+				end
+			end
+		end
+	end
+
+	return results
 end
 
 function EntityLib.onAdded(fn)
