@@ -82,6 +82,13 @@ local function raycast(origin, targetPos, ignore)
 	return Workspace:Raycast(origin, targetPos - origin, params)
 end
 
+local function isEnemy(entity)
+	if entity.player == nil then
+		return true -- NPC
+	end
+	return entity.player ~= localPlayer
+end
+
 function EntityLib.fromModel(model)
 	return byModel[model]
 end
