@@ -236,6 +236,32 @@ function EntityLib.getNearestVisibleEnemy(radius, angle)
 	return best
 end
 
+function EntityLib.getEntitiesInBox(cframe, size)
+	local half = size * 0.5
+	local right = cframe.RightVector
+	local up = cframe.UpVector
+	local look = cframe.LookVector
+	local pos = cframe.Position
+
+	local results = {}
+
+	for _, entity in pairs(entities) do
+		if entity.hrp then
+			local delta = entity.hrp.Position - pos
+
+			local x = math.abs(delta:Dot(right))
+			local y = math.abs(delta:Dot(up))
+			local z = math.abs(delta:Dot(look))
+
+			if x <= half.X and y <= half.Y and z <= half.Z then
+				results[#results + 1] = entity
+			end
+		end
+	end
+
+	return results
+end
+
 function EntityLib.onAdded(fn)
 	addedListeners[fn] = true
 end
