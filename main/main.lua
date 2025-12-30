@@ -308,6 +308,20 @@ Players.PlayerAdded:Connect(function(player)
 	end)
 end)
 
+for _, model in ipairs(Workspace:GetChildren()) do
+	if model:IsA("Model") and model:FindFirstChildOfClass("Humanoid") then
+		if not byModel[model] then
+			createEntity(model, nil)
+		end
+	end
+end
+
+Workspace.ChildAdded:Connect(function(model)
+	if model:IsA("Model") and model:FindFirstChildOfClass("Humanoid") then
+		createEntity(model, nil)
+	end
+end)
+
 Players.PlayerRemoving:Connect(function(player)
 	local entity = EntityLib.fromPlayer(player)
 	if entity then
