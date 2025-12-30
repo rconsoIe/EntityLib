@@ -56,6 +56,27 @@ local function removeEntity(entity)
 	emit(removedListeners, entity)
 end
 
+local function getViewOrigin()
+	local cam = Workspace.CurrentCamera
+	if cam then
+		return cam.CFrame.Position, cam.CFrame.LookVector
+	end
+
+	local hrp = getLocalHRP()
+	if hrp then
+		return hrp.Position, hrp.CFrame.LookVector
+	end
+end
+
+local function raycast(origin, targetPos, ignore)
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Blacklist
+	params.FilterDescendantsInstances = ignore
+	params.IgnoreWater = true
+
+	return Workspace:Raycast(origin, targetPos - origin, params)
+end
+
 function EntityLib.fromModel(model)
 	return byModel[model]
 end
@@ -132,6 +153,87 @@ function EntityLib.getNearby(radius, angle)
 	end
 
 	return results
+end
+
+function EntityLib.hasLineOfSight(entity)
+	if not entity or not entity.hrp then return false end
+
+	local origin = getViewOrigin()
+	if not origin then return false end
+
+	local hit = raycast(
+		origin,
+		entity.hrp.Position,
+		{ localPlayer.Character }
+	)
+
+	return hit and hit.Instance:IsDescendantOf(entity.model)
+end
+
+function EntityLib.isVisible(entity, angle)
+	if not entity or not entity.hrp then return false end
+
+	local origin, look = getViewOrigin()
+	if not origin then return false end
+
+	local delta = entity.hrp.Position - origin
+
+	if angle then
+		local cosLimit = math.cos(math.rad(angle) * 0.5)
+		if delta.Unit:Dot(look) < cosLimit then
+			return false
+		end
+	end
+
+	return EntityLib.hasLineOfSight(entity)
+end
+
+function EntityLib.getVisible(radius, angle)
+	local hrp = getLocalHRP()
+	if not hrp then return {} end
+
+	local origin = hrp.Position
+	local radiusSq = radius * radius
+
+	local visible = {}
+
+	for _, entity in pairs(entities) do
+		if entity.hrp and entity.player ~= localPlayer then
+			local d = entity.hrp.Position - origin
+			if d:Dot(d) <= radiusSq and EntityLib.isVisible(entity, angle) then
+				visible[#visible + 1] = entity
+			end
+		end
+	end
+
+	return visible
+end
+
+function EntityLib.getNearestVisibleEnemy(radius, angle)
+	local hrp = getLocalHRP()
+	if not hrp then return end
+
+	local origin = hrp.Position
+	local radiusSq = radius * radius
+
+	local best
+	local bestDist = math.huge
+
+	for _, entity in pairs(entities) do
+		if entity.hrp and isEnemy(entity) then
+			local d = entity.hrp.Position - origin
+			local dsq = d:Dot(d)
+
+			if dsq <= radiusSq and dsq < bestDist then
+				if EntityLib.isVisible(entity, angle) then
+					best = entity
+					bestDist = dsq
+				end
+			end
+		end
+	end
+
+	return best
 end
 
 function EntityLib.onAdded(fn)
